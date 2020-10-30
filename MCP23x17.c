@@ -7,14 +7,16 @@
 #include "MCP23x17.h"
 
 /**
- * Fonction: uint8_t MCP23x17_init(MCP23x17_t *driver)
+ * @fun: uint8_t MCP23x17_init(MCP23x17_t *driver)
  * @brief  	MCP23x17 initialize driver
  * @param  	MCP23x17_t *driver
  * @note
- * @retval 	value of register
+ * @retval 	1 success | 0 error
  */
 uint8_t MCP23x17_init(MCP23x17_t *driver)
 {
+	uint8_t iocon;
+
 	if (driver->com.protocole == MCP23S17_SPI)
 	{
 		osMutexWait(driver->com.mutex, osWaitForever);
@@ -24,13 +26,25 @@ uint8_t MCP23x17_init(MCP23x17_t *driver)
 		osMutexRelease(driver->com.mutex);
 	}
 
+	/* IOCON Config register */
+	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_IOCON, driver->config.portA.IOCON);
+	iocon = MCP23x17_read(driver, MCP23x17_portA, MCP23x17_IOCON);
+
+	if(iocon != driver->config.portA.IOCON)
+	{
+		iocon = 0; /* Error occured */
+	}
+	else
+	{
+		iocon = 1;
+	}
+
 	/* PORT A */
 	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_IODIR, driver->config.portA.IODIR);
 	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_IPOL, driver->config.portA.IPOL);
 	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_GPINTEN, driver->config.portA.GPINTEN);
 	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_DEFVAL, driver->config.portA.DEFVAL);
 	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_INTCON, driver->config.portA.INTCON);
-	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_IOCON, driver->config.portA.IOCON);
 	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_GPPU, driver->config.portA.GPPU);
 	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_GPIO, driver->config.portA.default_GPIO);
 	MCP23x17_write(driver, MCP23x17_portA, MCP23x17_OLAT, driver->config.portA.OLAT);
@@ -41,14 +55,15 @@ uint8_t MCP23x17_init(MCP23x17_t *driver)
 	MCP23x17_write(driver, MCP23x17_portB, MCP23x17_GPINTEN, driver->config.portB.GPINTEN);
 	MCP23x17_write(driver, MCP23x17_portB, MCP23x17_DEFVAL, driver->config.portB.DEFVAL);
 	MCP23x17_write(driver, MCP23x17_portB, MCP23x17_INTCON, driver->config.portB.INTCON);
-	MCP23x17_write(driver, MCP23x17_portB, MCP23x17_IOCON, driver->config.portB.IOCON);
 	MCP23x17_write(driver, MCP23x17_portB, MCP23x17_GPPU, driver->config.portB.GPPU);
 	MCP23x17_write(driver, MCP23x17_portB, MCP23x17_GPIO, driver->config.portB.default_GPIO);
 	MCP23x17_write(driver, MCP23x17_portB, MCP23x17_OLAT, driver->config.portB.OLAT);
+
+	return iocon;
 }
 
 /**
- * Fonction: uint8_t MCP23x17_read(MCP23x17_t *driver, MCP23x17_port_t port, MCP23x17_register_t reg)
+ * @fun: 	uint8_t MCP23x17_read(MCP23x17_t *driver, MCP23x17_port_t port, MCP23x17_register_t reg)
  * @brief  	MCP23x17 read specific register
  * @param  	MCP23x17_t *driver
  * @param 	MCP23x17_port_t port A or B
@@ -113,7 +128,7 @@ uint8_t MCP23x17_read(MCP23x17_t *driver, MCP23x17_port_t port, MCP23x17_registe
 		osMutexRelease(driver->com.mutex);
 	}
 
-	if (driver->com.protocole == MCP23S17_SPI)
+	if (driver->com.protocole == MCP23017_I2C)
 	{
 		osMutexWait(driver->com.mutex, osWaitForever);
 
@@ -132,7 +147,7 @@ uint8_t MCP23x17_read(MCP23x17_t *driver, MCP23x17_port_t port, MCP23x17_registe
 }
 
 /**
- * Fonction: uint8_t MCP23x17_readportA(MCP23x17_t *driver)
+ * @fun: 	uint8_t MCP23x17_readportA(MCP23x17_t *driver)
  * @brief  	MCP23x17 read GPIO port A
  * @param  	MCP23x17_t *driver
  * @note
@@ -144,7 +159,7 @@ uint8_t MCP23x17_readportA(MCP23x17_t *driver)
 }
 
 /**
- * Fonction: uint8_t MCP23x17_readportB(MCP23x17_t *driver)
+ * @fun: 	uint8_t MCP23x17_readportB(MCP23x17_t *driver)
  * @brief  	MCP23x17 read GPIO port B
  * @param  	MCP23x17_t *driver
  * @note
@@ -156,7 +171,7 @@ uint8_t MCP23x17_readportB(MCP23x17_t *driver)
 }
 
 /**
- * Fonction: void MCP23x17_write(MCP23x17_t *driver, MCP23x17_port_t port, MCP23x17_register_t reg, uint8_t value)
+ * @fun: 	void MCP23x17_write(MCP23x17_t *driver, MCP23x17_port_t port, MCP23x17_register_t reg, uint8_t value)
  * @brief  	MCP23x17 read specific register
  * @param  	MCP23x17_t *driver
  * @param 	MCP23x17_port_t port A or B
@@ -222,7 +237,7 @@ void MCP23x17_write(MCP23x17_t *driver, MCP23x17_port_t port, MCP23x17_register_
 		osMutexRelease(driver->com.mutex);
 	}
 
-	if (driver->com.protocole == MCP23S17_SPI)
+	if (driver->com.protocole == MCP23017_I2C)
 	{
 		osMutexWait(driver->com.mutex, osWaitForever);
 
@@ -235,7 +250,7 @@ void MCP23x17_write(MCP23x17_t *driver, MCP23x17_port_t port, MCP23x17_register_
 	}
 }
 /**
- * Fonction: void MCP23x17_writeportA(MCP23x17_t *driver, uint8_t value)
+ * @fun: 	void MCP23x17_writeportA(MCP23x17_t *driver, uint8_t value)
  * @brief  	MCP23x17 write port A
  * @param  	MCP23x17_t *device
  * @param	uint8_t value of port A
@@ -248,7 +263,7 @@ void MCP23x17_writeportA(MCP23x17_t *driver, uint8_t value)
 }
 
 /**
- * Fonction: void MCP23x17_writeportB(MCP23x17_t *driver, uint8_t value)
+ * @fun: 	void MCP23x17_writeportB(MCP23x17_t *driver, uint8_t value)
  * @brief  	MCP23x17 write port B
  * @param  	MCP23x17_t *device
  * @param	uint8_t value of port B
